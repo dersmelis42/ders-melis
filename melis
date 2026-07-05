@@ -1,5 +1,4 @@
 import streamlit as st
-import datetime
 
 # Sayfa Ayarları
 st.set_page_config(page_title="KPSS Güç Birliği Çalışma Programı", page_icon="📚", layout="wide")
@@ -7,6 +6,15 @@ st.set_page_config(page_title="KPSS Güç Birliği Çalışma Programı", page_i
 st.title("📚 KPSS Güç Birliği Çalışma Programı")
 st.subheader("Günde 7 Seans (45 dk Ders + 15 dk Mola) | Son 3 Ay")
 st.markdown("---")
+
+# Ortak hafıza havuzu (Senkronizasyon için)
+if "db" not in st.session_state:
+    st.session_state.db = {
+        "ben_ilerleme": 0,
+        "kiz_ilerleme": 0,
+        "hafta": 1,
+        "gun": "Pazartesi"
+    }
 
 # Kullanıcı Seçimi
 user = st.sidebar.selectbox("Kullanıcı Seçin:", ["Seçiniz...", "Ben", "Kız Arkadaşım"])
@@ -18,10 +26,10 @@ else:
 
     # 3 Aylık Süreç Takibi
     st.sidebar.markdown("### 📅 Süreç Durumu")
-    hafta = st.sidebar.slider("Kaçıncı Haftadasınız?", 1, 12, 1)
+    st.session_state.db["hafta"] = st.sidebar.slider("Kaçıncı Haftadasınız?", 1, 12, int(st.session_state.db["hafta"]))
     
     # Strateji Bilgilendirmesi
-    if hafta <= 6:
+    if st.session_state.db["hafta"] <= 6:
         st.sidebar.warning("⚡ İlk 6 Hafta: Türkçe, Tarih, Matematik odaklı gidiyoruz. Vatandaşlık henüz yok.")
         dersler = ["Matematik", "Tarih", "Türkçe"]
     else:
@@ -29,18 +37,19 @@ else:
         dersler = ["Matematik", "Tarih", "Türkçe", "Vatandaşlık"]
 
     # Gün Seçimi
-    gun = st.selectbox("Hangi Günün Programına Bakıyorsunuz?", 
-                       ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi (Genel Tekrar)", "Pazar (Tatil)"])
+    gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi (Genel Tekrar)", "Pazar (Tatil)"]
+    varsayilan_gun_index = gunler.index(st.session_state.db["gun"])
+    st.session_state.db["gun"] = st.selectbox("Hangi Günün Programına Bakıyorsunuz?", gunler, index=varsayilan_gun_index)
 
-    st.markdown(f"### 🗓️ {gun} Günü Görevleri")
+    st.markdown(f"### 🗓️ {st.session_state.db['gun']} Günü Görevleri")
 
     # Pazar Günü Tatil Modu
-    if gun == "Pazar (Tatil)":
+    if st.session_state.db["gun"] == "Pazar (Tatil)":
         st.balloons()
         st.markdown("### 🎉 Bugün Hak Edilmiş Tatil Günü! Dinlenin, zihninizi boşaltın ve haftaya bomba gibi hazırlanın.")
     
     # Cumartesi Genel Tekrar Modu
-    elif "Genel Tekrar" in gun:
+    elif "Genel Tekrar" in st.session_state.db["gun"]:
         st.markdown("⚠️ **Bugün yeni konu çalışmak yok! Sadece geçmişin tekrarı ve soru çözümü.**")
         kol1, kol2 = st.columns(2)
         
@@ -49,14 +58,13 @@ else:
             t1 = st.checkbox("Geçmiş Haftaların Genel Tekrarı (Ben)", key="ben_tekrar")
             t2 = st.checkbox("Haftalık Soru Çözümü & Analizi (Ben)", key="ben_soru")
             
-        with col2:
+        with kol2:
             st.markdown("#### 👩 Kız Arkadaşının Durumu")
             k_t1 = st.checkbox("Geçmiş Haftaların Genel Tekrarı (Kız Arkadaşım)", key="kiz_tekrar")
             k_t2 = st.checkbox("Haftalık Soru Çözümü & Analizi (Kız Arkadaşım)", key="kiz_soru")
 
     # Hafta İçi Yoğun Çalışma Programı
     else:
-        # Seansların içeriğini günlere göre dinamik dağıtalım
         seans_programi = [
             f"1. Seans (45 dk): {dersler[0]} Konu Çalışması",
             f"2. Seans (45 dk): {dersler[0]} Soru Çözümü",
@@ -73,31 +81,33 @@ else:
             st.markdown("#### 🧔 Senin Seansların")
             ben_skor = 0
             for i, seans in enumerate(seans_programi):
-                if st.checkbox(seans, key=f"ben_s_{i}"):
+                # Eğer kullanıcı 'Ben' ise tıklayabilir, değilse sadece durumu görür
+                disabled_status = False if user == "Ben" else True
+                if st.checkbox(seans, key=f"ben_s_{i}", disabled=disabled_status):
                     ben_skor += 1
-            
-            # İlerleme Çubuğu
-            st.progress(ben_skor / 7)
-            st.write(f"Tamamlanan seans: {ben_skor}/7")
+            st.session_state.db["ben_ilerleme"] = ben_skor
+            st.progress(st.session_state.db["ben_ilerleme"] / 7)
+            st.write(f"Tamamlanan seans: {st.session_state.db['ben_ilerleme']}/7")
 
         with col2:
-            st.markdown("#### 👩 Kız Arkadaşının Seansların")
+            st.markdown("#### 👩 Kız Arkadaşının Seansları")
             kiz_skor = 0
             for i, seans in enumerate(seans_programi):
-                if st.checkbox(seans, key=f"kiz_s_{i}"):
+                # Eğer kullanıcı 'Kız Arkadaşım' ise tıklayabilir, değilse sadece durumu görür
+                disabled_status = False if user == "Kız Arkadaşım" else True
+                if st.checkbox(seans, key=f"kiz_s_{i}", disabled=disabled_status):
                     kiz_skor += 1
-            
-            # İlerleme Çubuğu
-            st.progress(kiz_skor / 7)
-            st.write(f"Tamamlanan seans: {kiz_skor}/7")
+            st.session_state.db["kiz_ilerleme"] = kiz_skor
+            st.progress(st.session_state.db["kiz_ilerleme"] / 7)
+            st.write(f"Tamamlanan seans: {st.session_state.db['kiz_ilerleme']}/7")
 
-        # Günün Motivasyon Mesajı
-        if ben_skor == 7 and kiz_skor == 7:
-            st.confetti()
+        # Günün Motivasyon Mesajları
+        if st.session_state.db["ben_ilerleme"] == 7 and st.session_state.db["kiz_ilerleme"] == 7:
+            st.toast("Tebrikler!", icon="🏆")
             st.success("🏆 İKİNİZ DE GÜNÜ NAKAVT ETTİNİZ! Harika bir çiftsiniz, bu sınav sizden korksun!")
-        elif ben_skor == 7:
+        elif st.session_state.db["ben_ilerleme"] == 7:
             st.info("💪 Harika! Bugünlük görevlerini tamamladın. Şimdi kız arkadaşına destek olma zamanı!")
-        elif kiz_skor == 7:
+        elif st.session_state.db["kiz_ilerleme"] == 7:
             st.info("🌸 Kız arkadaşın 7 seansı da bitirdi! Hadi sen de tempoyu artır, ona yetiş!")
 
 st.markdown("---")
