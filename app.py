@@ -8,41 +8,7 @@ st.markdown("<h1 style='text-align: center; color: #FF4B4B;'>🌸 Melis'in KPSS 
 st.markdown("<h4 style='text-align: center; color: #1C83E1;'>Günde 2 Ders | Adım Adım Konu Takibi | Son 3 Ay</h4>", unsafe_allow_html=True)
 st.markdown("<hr style='border: 2px solid #FF4B4B;'>", unsafe_allow_html=True)
 
-# Canlı Ortak Hafıza Sistemi (Senkronizasyon Hatasını Önler)
-if "melis_data" not in st.session_state:
-    st.session_state.melis_data = {}
-
-# Süreç Durumu ve Hafta Seçimi (Renkli Sidebar)
-st.sidebar.markdown("<h2 style='color: #FF6F61;'>📅 Süreç Durumu</h2>", unsafe_allow_html=True)
-if "hafta" not in st.session_state:
-    st.session_state.hafta = 1
-
-hafta = st.sidebar.slider("Kaçıncı Haftadasın Melis?", 1, 12, int(st.session_state.hafta))
-st.session_state.hafta = hafta
-
-# İlk 6 Hafta ve Son 6 Hafta Dinamik Durumu
-if hafta <= 6:
-    st.sidebar.markdown(
-        "<div style='background-color: #E8F4F8; padding: 10px; border-radius: 10px; border-left: 5px solid #1C83E1;'>"
-        "<h4 style='color: #1C83E1; margin: 0;'>⚡ İlk 6 Hafta</h4>"
-        "<p style='color: #555; font-size: 14px;'>Türkçe, Tarih ve Matematik konularını eritiyoruz!</p>"
-        "</div>", 
-        unsafe_allow_html=True
-    )
-else:
-    st.sidebar.markdown(
-        "<div style='background-color: #FDF2E9; padding: 10px; border-radius: 10px; border-left: 5px solid #E67E22;'>"
-        "<h4 style='color: #E67E22; margin: 0;'>🔥 Son 6 Hafta</h4>"
-        "<p style='color: #555; font-size: 14px;'>Vatandaşlık dersi listeye eklendi, tempoyu koru!</p>"
-        "</div>", 
-        unsafe_allow_html=True
-    )
-
-# Gün Seçimi
-st.markdown("<h3 style='color: #6C5B7B;'>🗓️ Bugün Hangi Gün?</h3>", unsafe_allow_html=True)
-gun = st.selectbox("", ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi (Genel Tekrar)", "Pazar (Tatil)"])
-
-# KPSS Ön Lisans Müfredatına Göre Konu Havuzu
+# Müfredat Konu Havuzu
 mat_konulari = [
     "Temel Kavramlar", "Tek-Çift Sayılar & Basamak Kavramı", 
     "Rasyonel ve Ondalık Sayılar", "Bölme ve Bölünebilme", 
@@ -71,7 +37,81 @@ vatandasiik_konulari = [
     "Yürütme Organı", "Yargı Organı", "İdare Hukuku"
 ]
 
-# Dinamik Günlük Program Atama
+# ---- SOL MENÜ (SIDEBAR) VE GENEL İLERLEME DURUMU ----
+st.sidebar.markdown("<h2 style='color: #FF6F61;'>📅 Süreç Durumu</h2>", unsafe_allow_html=True)
+if "hafta" not in st.session_state:
+    st.session_state.hafta = 1
+
+hafta = st.sidebar.slider("Kaçıncı Haftadasın Melis?", 1, 12, int(st.session_state.hafta))
+st.session_state.hafta = hafta
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("<h2 style='color: #9B59B6;'>📊 Genel Müfredat İlerlemesi</h2>", unsafe_allow_html=True)
+st.sidebar.markdown("<p style='font-size: 13px; color: #666;'>Bitirdiğin konuları aşağıdan tikleyerek genel ilerlemeni görebilirsin:</p>", unsafe_allow_html=True)
+
+# Ders bazlı genel ilerleme takibi expandaer'ları
+with st.sidebar.expander("📖 Türkçe İlerlemesi"):
+    turkce_biten = 0
+    for k in turkce_konulari:
+        if st.checkbox(k, key=f"g_tur_{k}"):
+            turkce_biten += 1
+    turkce_yuzde = int((turkce_biten / len(turkce_konulari)) * 100)
+    st.markdown(f"**Türkçe Biten: %{turkce_yuzde}**")
+    st.progress(turkce_biten / len(turkce_konulari))
+
+with st.sidebar.expander("📐 Matematik İlerlemesi"):
+    mat_biten = 0
+    for k in mat_konulari:
+        if st.checkbox(k, key=f"g_mat_{k}"):
+            mat_biten += 1
+    mat_yuzde = int((mat_biten / len(mat_konulari)) * 100)
+    st.markdown(f"**Matematik Biten: %{mat_yuzde}**")
+    st.progress(mat_biten / len(mat_konulari))
+
+with st.sidebar.expander("📜 Tarih İlerlemesi"):
+    tarih_biten = 0
+    for k in tarih_konulari:
+        if st.checkbox(k, key=f"g_tar_{k}"):
+            tarih_biten += 1
+    tarih_yuzde = int((tarih_biten / len(tarih_konulari)) * 100)
+    st.markdown(f"**Tarih Biten: %{tarih_yuzde}**")
+    st.progress(tarih_biten / len(tarih_konulari))
+
+if hafta > 6:
+    with st.sidebar.expander("⚖️ Vatandaşlık İlerlemesi"):
+        vat_biten = 0
+        for k in vatandasiik_konulari:
+            if st.checkbox(k, key=f"g_vat_{k}"):
+                vat_biten += 1
+        vat_yuzde = int((vat_biten / len(vatandasiik_konulari)) * 100)
+        st.markdown(f"**Vatandaşlık Biten: %{vat_yuzde}**")
+        st.progress(vat_biten / len(vatandasiik_konulari))
+
+st.sidebar.markdown("---")
+
+# İlk 6 Hafta ve Son 6 Hafta Dinamik Durumu Bilgilendirmesi
+if hafta <= 6:
+    st.sidebar.markdown(
+        "<div style='background-color: #E8F4F8; padding: 10px; border-radius: 10px; border-left: 5px solid #1C83E1;'>"
+        "<h4 style='color: #1C83E1; margin: 0;'>⚡ İlk 6 Hafta</h4>"
+        "<p style='color: #555; font-size: 14px;'>Türkçe, Tarih ve Matematik odaklıyız.</p>"
+        "</div>", 
+        unsafe_allow_html=True
+    )
+else:
+    st.sidebar.markdown(
+        "<div style='background-color: #FDF2E9; padding: 10px; border-radius: 10px; border-left: 5px solid #E67E22;'>"
+        "<h4 style='color: #E67E22; margin: 0;'>🔥 Son 6 Hafta</h4>"
+        "<p style='color: #555; font-size: 14px;'>Vatandaşlık dersi eklendi, başarılar!</p>"
+        "</div>", 
+        unsafe_allow_html=True
+    )
+
+# ---- ANA SAYFA DERS PROGRAMI EKRANI ----
+st.markdown("<h3 style='color: #6C5B7B;'>🗓️ Bugün Hangi Gün?</h3>", unsafe_allow_html=True)
+gun = st.selectbox("", ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi (Genel Tekrar)", "Pazar (Tatil)"])
+
+# Dinamik Günlük Program Konu İndeksleri
 index_mat = (hafta - 1) % len(mat_konulari)
 index_tar = (hafta - 1) % len(tarih_konulari)
 index_tur = (hafta - 1) % len(turkce_konulari)
@@ -135,7 +175,7 @@ else:
         st.markdown(f"<p style='font-size: 16px; font-weight: bold; margin-top:10px;'>Hedef Konu: <span style='color: {d2_renk};'>{ders2_konu}</span></p>", unsafe_allow_html=True)
         
         c4 = st.checkbox("45 dk Konu Videosu / Kaynak Okuması", key="d2_c1")
-        c5 = st.checkbox("45 dk Soru Çözümü ve Pratik", key="d2_c2")
+        c5 = st.checkbox("45 dk Soru Chözümü ve Pratik", key="d2_c2")
         c6 = st.checkbox("45 dk Günün Son Tekrarı", key="d2_c3")
 
     st.markdown("<hr>", unsafe_allow_html=True)
@@ -146,7 +186,7 @@ else:
     st.write(f"Tamamlanan Seans: {toplam_skor} / 6")
 
     if toplam_skor == 6:
-        st.balloons()  # Hatalı konfeti kodu yerine çalışan balon efektini koydum!
+        st.balloons()
         st.success("🏆 MUHTEŞEM! Melis bugün tüm görevlerini tamamladın!")
     elif toplam_skor >= 4:
         st.info("✨ Çok iyi gidiyorsun Melis! Azıcık daha gayret!")
