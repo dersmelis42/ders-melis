@@ -1,114 +1,156 @@
 import streamlit as st
 
 # Sayfa Ayarları
-st.set_page_config(page_title="KPSS Güç Birliği Çalışma Programı", page_icon="📚", layout="wide")
+st.set_page_config(page_title="Melis'in KPSS Başarı Günlüğü 🌸", page_icon="👑", layout="wide")
 
-st.title("📚 KPSS Güç Birliği Çalışma Programı")
-st.subheader("Günde 7 Seans (45 dk Ders + 15 dk Mola) | Son 3 Ay")
-st.markdown("---")
+# Renkli ve Tasarımsal Başlık
+st.markdown("<h1 style='text-align: center; color: #FF4B4B;'>🌸 Melis'in KPSS Başarı Günlüğü 🌸</h1>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center; color: #1C83E1;'>Günde 2 Ders | Adım Adım Konu Takibi | Son 3 Ay</h4>", unsafe_allow_html=True)
+st.markdown("<hr style='border: 2px solid #FF4B4B;'>", unsafe_allow_html=True)
 
-# Ortak hafıza havuzu (Senkronizasyon için)
-if "db" not in st.session_state:
-    st.session_state.db = {
-        "ben_ilerleme": 0,
-        "kiz_ilerleme": 0,
-        "hafta": 1,
-        "gun": "Pazartesi"
-    }
+# Süreç Durumu ve Hafta Seçimi (Renkli Sidebar)
+st.sidebar.markdown("<h2 style='color: #FF6F61;'>📅 Süreç Durumu</h2>", unsafe_allow_html=True)
+if "hafta" not in st.session_state:
+    st.session_state.hafta = 1
 
-# Kullanıcı Seçimi
-user = st.sidebar.selectbox("Kullanıcı Seçin:", ["Seçiniz...", "Ben", "Kız Arkadaşım"])
+hafta = st.sidebar.slider("Kaçıncı Haftadasın Melis?", 1, 12, int(st.session_state.hafta))
+st.session_state.hafta = hafta
 
-if user == "Seçiniz...":
-    st.info("Lütfen sol taraftaki menüden kimin ekranı olduğunu seçin.")
+# İlk 6 Hafta ve Son 6 Hafta Dinamik Durumu
+if hafta <= 6:
+    st.sidebar.markdown(
+        "<div style='background-color: #E8F4F8; padding: 10px; border-radius: 10px; border-left: 5px solid #1C83E1;'>"
+        "<h4 style='color: #1C83E1; margin: 0;'>⚡ İlk 6 Hafta</h4>"
+        "<p style='color: #555; font-size: 14px;'>Türkçe, Tarih ve Matematik konularını eritiyoruz!</p>"
+        "</div>", 
+        unsafe_allow_html=True
+    )
 else:
-    st.success(f"Hoş geldin! Şu an **{user}** olarak giriş yaptın. Başarılar!")
+    st.sidebar.markdown(
+        "<div style='background-color: #FDF2E9; padding: 10px; border-radius: 10px; border-left: 5px solid #E67E22;'>"
+        "<h4 style='color: #E67E22; margin: 0;'>🔥 Son 6 Hafta</h4>"
+        "<p style='color: #555; font-size: 14px;'>Vatandaşlık dersi listeye eklendi, tempoyu koru!</p>"
+        "</div>", 
+        unsafe_allow_html=True
+    )
 
-    # 3 Aylık Süreç Takibi
-    st.sidebar.markdown("### 📅 Süreç Durumu")
-    st.session_state.db["hafta"] = st.sidebar.slider("Kaçıncı Haftadasınız?", 1, 12, int(st.session_state.db["hafta"]))
+# Gün Seçimi (Renkli Buton Görünümü İçin)
+st.markdown("<h3 style='color: #6C5B7B;'>🗓️ Bugün Hangi Gün?</h3>", unsafe_allow_html=True)
+gun = st.selectbox("", ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi (Genel Tekrar)", "Pazar (Tatil)"])
+
+# Kitap Seç KPSS Ön Lisans Müfredatına Göre Konu Havuzu (Haftalara Dağıtılmış)
+mat_konulari = [
+    "Temel Kavramlar", "Tek-Çift Sayılar & Basamak Kavramı", 
+    "Rasyonel ve Ondalık Sayılar", "Bölme ve Bölünebilme", 
+    "Üslü Sayılar", "Köklü Sayılar", "Basit Eşitsizlikler", 
+    "Fonksiyonlar", "Sayı ve Yaş Problemleri", "Grafik Problemleri"
+]
+
+tarih_konulari = [
+    "İslamiyet Öncesi Türk Tarihi", "İlk Türk-İslam Devletleri", 
+    "Osmanlı Devleti Kuruluş ve Yükselme", "Osmanlı Devleti Kültür ve Medeniyet", 
+    "Osmanlı Devleti Duraklama ve Gerileme", "Osmanlı Devleti Dağılma Dönemi", 
+    "XX. Yüzyılda Osmanlı (Trablusgarp, Balkan, I. Dünya Savaşı)", "Kurtuluş Savaşı Hazırlık Dönemi", 
+    "Kurtuluş Savaşı Muharebeler Dönemi", "Atatürk İlke ve İnkılapları", "Çağdaş Türk ve Dünya Tarihi"
+]
+
+turkce_konulari = [
+    "Sözcükte ve Cümlede Anlam", "Paragrafta Anlam (Ana Düşünce/Yardımcı Düşünce)",
+    "Ses Bilgisi & Yazım Kuralları", "Noktalama İşaretleri", 
+    "Sözcük Türleri (İsim, Sıfat, Zamir, Zarf)", "Cümlenin Ögeleri & Çatı", 
+    "Sözel Mantık - Tablo ve Sıralama Soruları"
+]
+
+vatandasiik_konulari = [
+    "Hukukun Temel Kavramları", "Devletin Temel Ögeleri ve Hükümet Sistemleri",
+    "1982 Anayasası ve Temel İlkeler", "Yasama Organı (TBMM)", 
+    "Yürütme Organı (Cumhurbaşkanlığı)", "Yargı Organı (Mahkemeler)", "İdare Hukuku"
+]
+
+# Dinamik Günlük Program Atama (Haftalık değişir, günde 2 ders)
+index_mat = (hafta - 1) % len(mat_konulari)
+index_tar = (hafta - 1) % len(tarih_konulari)
+index_tur = (hafta - 1) % len(turkce_konulari)
+index_vat = (hafta - 7) % len(vatandasiik_konulari) if hafta > 6 else 0
+
+# Pazar Tatil Modu
+if gun == "Pazar (Tatil)":
+    st.balloons()
+    st.markdown(
+        "<div style='background-color: #D4EDDA; padding: 30px; border-radius: 15px; text-align: center; border: 2px dashed #28A745;'>"
+        "<h2 style='color: #28A745;'>🎉 Harika Bir Dinlenme Günü!</h2>"
+        "<p style='font-size: 18px; color: #155724;'>Melis, bugün hak edilmiş tatil günün. Zihnini boşalt, kahveni iç ve yeni haftaya enerji depola!</p>"
+        "</div>", 
+        unsafe_allow_html=True
+    )
+
+# Cumartesi Genel Tekrar Modu
+elif "Genel Tekrar" in gun:
+    st.markdown(
+        "<div style='background-color: #FFF3CD; padding: 20px; border-radius: 12px; border-left: 6px solid #FFC107;'>"
+        "<h4 style='color: #856404; margin: 0;'>⚠️ Cumartesi Düzeni: Yeni Konu Çalışmak Yok!</h4>"
+        "<p style='color: #856404; font-size: 15px; margin: 5px 0 0 0;'>Bu hafta çalıştığın konuları gözden geçir ve bol bol soru çöz.</p>"
+        "</div>", 
+        unsafe_allow_html=True
+    )
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    # Strateji Bilgilendirmesi
-    if st.session_state.db["hafta"] <= 6:
-        st.sidebar.warning("⚡ İlk 6 Hafta: Türkçe, Tarih, Matematik odaklı gidiyoruz. Vatandaşlık henüz yok.")
-        dersler = ["Matematik", "Tarih", "Türkçe"]
-    else:
-        st.sidebar.error("🔥 Son 6 Hafta: Vatandaşlık dersi programa eklendi! Tempoyu artırın.")
-        dersler = ["Matematik", "Tarih", "Türkçe", "Vatandaşlık"]
-
-    # Gün Seçimi
-    gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi (Genel Tekrar)", "Pazar (Tatil)"]
-    varsayilan_gun_index = gunler.index(st.session_state.db["gun"])
-    st.session_state.db["gun"] = st.selectbox("Hangi Günün Programına Bakıyorsunuz?", gunler, index=varsayilan_gun_index)
-
-    st.markdown(f"### 🗓️ {st.session_state.db['gun']} Günü Görevleri")
-
-    # Pazar Günü Tatil Modu
-    if st.session_state.db["gun"] == "Pazar (Tatil)":
-        st.balloons()
-        st.markdown("### 🎉 Bugün Hak Edilmiş Tatil Günü! Dinlenin, zihninizi boşaltın ve haftaya bomba gibi hazırlanın.")
+    t1 = st.checkbox("📚 Bu Hafta Çalışılan Konuların Not Tekrarı", key="m_tekrar")
+    t2 = st.checkbox("✏️ Haftalık Soru Çözümü ve Yapılamayan Soruların Analizi", key="m_soru")
+    t3 = st.checkbox("⏱️ 1 Adet Paragraf / Problem Rutin Testi", key="m_rutin")
     
-    # Cumartesi Genel Tekrar Modu
-    elif "Genel Tekrar" in st.session_state.db["gun"]:
-        st.markdown("⚠️ **Bugün yeni konu çalışmak yok! Sadece geçmişin tekrarı ve soru çözümü.**")
-        kol1, kol2 = st.columns(2)
+    skor = sum([t1, t2, t3])
+    st.progress(skor / 3)
+    if skor == 3:
+        st.confetti()
+        st.success("Haftalık genel tekrar başarıyla tamamlandı! Harikasın Melis! 🌟")
+
+# Hafta İçi Çalışma Günleri
+else:
+    # Ders Dağılımları (Günde sadece 2 ders olacak şekilde dengelendi)
+    if gun in ["Pazartesi", "Çarşamba"]:
+        ders1_isim, ders1_konu, d1_renk = "📐 Matematik", mat_konulari[index_mat], "#4A90E2"
+        if hafta <= 6:
+            ders2_isim, ders2_konu, d2_renk = "📖 Türkçe", turkce_konulari[index_tur], "#9B59B6"
+        else:
+            ders2_isim, ders2_konu, d2_renk = "⚖️ Vatandaşlık", vatandasiik_konulari[index_vat], "#E67E22"
+    else: # Salı, Perşembe, Cuma
+        ders1_isim, ders1_konu, d1_renk = "📜 Tarih", tarih_konulari[index_tar], "#2ECC71"
+        ders2_isim, ders2_konu, d2_renk = "📐 Matematik", mat_konulari[(index_mat + 1) % len(mat_konulari)], "#4A90E2"
+
+    # Yan Yana Renkli İki Kart Görünümü
+    kol1, kol2 = st.columns(2)
+    
+    with kol1:
+        st.markdown(f"<div style='background-color: {d1_renk}; padding: 12px; border-radius: 10px; color: white; text-align: center;'><h3>{ders1_isim}</h3></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-size: 16px; font-weight: bold; margin-top:10px;'>Hedef Konu: <span style='color: {d1_renk};'>{ders1_konu}</span></p>", unsafe_allow_html=True)
         
-        with kol1:
-            st.markdown("#### 🧔 Senin Durumun")
-            t1 = st.checkbox("Geçmiş Haftaların Genel Tekrarı (Ben)", key="ben_tekrar")
-            t2 = st.checkbox("Haftalık Soru Çözümü & Analizi (Ben)", key="ben_soru")
-            
-        with kol2:
-            st.markdown("#### 👩 Kız Arkadaşının Durumu")
-            k_t1 = st.checkbox("Geçmiş Haftaların Genel Tekrarı (Kız Arkadaşım)", key="kiz_tekrar")
-            k_t2 = st.checkbox("Haftalık Soru Çözümü & Analizi (Kız Arkadaşım)", key="kiz_soru")
+        c1 = st.checkbox("45 dk Konu Çalışması + Not Çıkarma", key="d1_c1")
+        c2 = st.checkbox("45 dk Soru Çözümü (En az 30 soru)", key="d1_c2")
+        c3 = st.checkbox("45 dk Yanlış Soruların Çözümünü Öğrenme", key="d1_c3")
 
-    # Hafta İçi Yoğun Çalışma Programı
-    else:
-        seans_programi = [
-            f"1. Seans (45 dk): {dersler[0]} Konu Çalışması",
-            f"2. Seans (45 dk): {dersler[0]} Soru Çözümü",
-            f"3. Seans (45 dk): {dersler[1]} Konu Çalışması",
-            f"4. Seans (45 dk): {dersler[1]} Soru Çözümü",
-            f"5. Seans (45 dk): {dersler[2] if len(dersler)==3 else dersler[3]} Çalışması",
-            f"6. Seans (45 dk): Karma Soru Çözümü / Eksik Kapatma",
-            f"7. Seans (45 dk): Günün Son Tekrarı ve Paragraf/Problem Çözümü"
-        ]
+    with kol2:
+        st.markdown(f"<div style='background-color: {d2_renk}; padding: 12px; border-radius: 10px; color: white; text-align: center;'><h3>{ders2_isim}</h3></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-size: 16px; font-weight: bold; margin-top:10px;'>Hedef Konu: <span style='color: {d2_renk};'>{ders2_konu}</span></p>", unsafe_allow_html=True)
+        
+        c4 = st.checkbox("45 dk Konu Videosu / Kaynak Okuması", key="d2_c1")
+        c5 = st.checkbox("45 dk Soru Çözümü ve Pratik", key="d2_c2")
+        c6 = st.checkbox("45 dk Günün Son Tekrarı", key="d2_c3")
 
-        col1, col2 = st.columns(2)
+    st.markdown("<hr>", unsafe_allow_html=True)
+    
+    # Günlük Skor Hesaplama ve İlerleme Çubuğu
+    toplam_skor = sum([c1, c2, c3, c4, c5, c6])
+    st.markdown("<h4 style='color: #333;'>📊 Bugünün Tamamlanma Oranı:</h4>", unsafe_allow_html=True)
+    st.progress(toplam_skor / 6)
+    st.write(f"Tamamlanan Seans: {toplam_skor} / 6")
 
-        with col1:
-            st.markdown("#### 🧔 Senin Seansların")
-            ben_skor = 0
-            for i, seans in enumerate(seans_programi):
-                # Eğer kullanıcı 'Ben' ise tıklayabilir, değilse sadece durumu görür
-                disabled_status = False if user == "Ben" else True
-                if st.checkbox(seans, key=f"ben_s_{i}", disabled=disabled_status):
-                    ben_skor += 1
-            st.session_state.db["ben_ilerleme"] = ben_skor
-            st.progress(st.session_state.db["ben_ilerleme"] / 7)
-            st.write(f"Tamamlanan seans: {st.session_state.db['ben_ilerleme']}/7")
+    # Motivasyon Mesajları
+    if toplam_skor == 6:
+        st.confetti()
+        st.success("🏆 MUHTEŞEM! Melis bugün tüm görevlerini tamamladın ve harika bir iş çıkardın!")
+    elif toplam_skor >= 4:
+        st.info("✨ Çok iyi gidiyorsun Melis! Azıcık daha gayret, bugünü de dereceyle kapatacaksın!")
 
-        with col2:
-            st.markdown("#### 👩 Kız Arkadaşının Seansları")
-            kiz_skor = 0
-            for i, seans in enumerate(seans_programi):
-                # Eğer kullanıcı 'Kız Arkadaşım' ise tıklayabilir, değilse sadece durumu görür
-                disabled_status = False if user == "Kız Arkadaşım" else True
-                if st.checkbox(seans, key=f"kiz_s_{i}", disabled=disabled_status):
-                    kiz_skor += 1
-            st.session_state.db["kiz_ilerleme"] = kiz_skor
-            st.progress(st.session_state.db["kiz_ilerleme"] / 7)
-            st.write(f"Tamamlanan seans: {st.session_state.db['kiz_ilerleme']}/7")
-
-        # Günün Motivasyon Mesajları
-        if st.session_state.db["ben_ilerleme"] == 7 and st.session_state.db["kiz_ilerleme"] == 7:
-            st.toast("Tebrikler!", icon="🏆")
-            st.success("🏆 İKİNİZ DE GÜNÜ NAKAVT ETTİNİZ! Harika bir çiftsiniz, bu sınav sizden korksun!")
-        elif st.session_state.db["ben_ilerleme"] == 7:
-            st.info("💪 Harika! Bugünlük görevlerini tamamladın. Şimdi kız arkadaşına destek olma zamanı!")
-        elif st.session_state.db["kiz_ilerleme"] == 7:
-            st.info("🌸 Kız arkadaşın 7 seansı da bitirdi! Hadi sen de tempoyu artır, ona yetiş!")
-
-st.markdown("---")
-st.caption("✨ Birbirinize verdiğiniz sözleri unutmayın. Bu web sitesi aşkla ve azimle ders çalışmanız için tasarlandı.")
+st.markdown("<hr style='border: 1px solid #FF4B4B;'>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #888; font-style: italic;'>Kız arkadaşın Melis için sevgi ve destekle güncellendi. Bu sınavı kesinlikle kazanacak! 👑</p>", unsafe_allow_html=True)
